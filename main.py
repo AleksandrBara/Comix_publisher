@@ -5,11 +5,21 @@ import random
 import urllib.parse
 
 
-def save_link_as_picture(link, file_name):
-    response = requests.get(link)
-    response.raise_for_status()
+def download_random_comic(api_xkcd_url):
+    random_comic_number = random.randint(0, 2500)
+    random_comic_url = api_xkcd_url.format(random_comic_number)
+    xkcd_response = requests.get(random_comic_url)
+    xkcd_response.raise_for_status()
+    decoded_response = xkcd_response.json()
+    random_comic_comment = decoded_response['alt']
+    random_comic_img = decoded_response['img']
+    file_extension = make_file_extension_from_link(random_comic_img)
+    file_name = 'random_img{}'.format(file_extension)
+    comic_response = requests.get(random_comic_img)
+    comic_response.raise_for_status()
     with open(file_name, 'wb') as file:
-        file.write(response.content)
+        file.write(comic_response.content)
+    return file_name, random_comic_comment
 
 
 def make_file_extension_from_link(link):
@@ -61,15 +71,6 @@ def post_photo_to_vk_wall(vk_method_urls, payload):
     return wall_post
 
 
-def get_random_img_url_and_comment(random_comic_info_url):
-    xkcd_response = requests.get(random_comic_info_url)
-    xkcd_response.raise_for_status()
-    decoded_response = xkcd_response.json()
-    random_comic_comment = decoded_response['alt']
-    random_comic_img = decoded_response['img']
-    return random_comic_img, random_comic_comment
-
-
 def delete_img_file(file_name):
     os.remove(file_name)
 
@@ -78,6 +79,7 @@ if __name__ == '__main__':
     load_dotenv()
     vk_access_token = os.getenv("VK_ACCESS_TOKEN")
     vk_group_id = os.getenv("VK_GROUP_ID")
+    api_xkcd_url = 'https://xkcd.com/{}/info.0.json'
     payload = {
         'access_token': vk_access_token,
         'v': '5.131'
@@ -87,21 +89,13 @@ if __name__ == '__main__':
         'get_wall_upload': 'https://api.vk.com/method/photos.getWallUploadServer',
         'wall_post': 'https://api.vk.com/method/wall.post'
     }
-    random_comic_number = random.randint(0, 2500)
-    comic_general_info_url = 'https://xkcd.com/{}/info.0.json'.format(
-        random_comic_number
-    )
+
     try:
-        comic_img_url, comic_comment = get_random_img_url_and_comment(
-            comic_general_info_url
-        )
-        file_extension = make_file_extension_from_link(comic_img_url)
-        file_name = 'random_img{}'.format(file_extension)
-        save_link_as_picture(comic_img_url, file_name)
+        file_name, comic_comment = download_random_comic(api_xkcd_url)
     except (requests.HTTPError, requests.ConnectionError) as e:
-        quit('Не возможно получить данные с сервера:\n{}'.format(e))
+        exit('Не возможно получить данные с сервера:\n{}'.format(e))
     except (OSError, PermissionError) as e:
-        quit('Ошибка:\n{}'.format(e))
+        exit('Ошибка:\n{}'.format(e))
     try:
         upload_url = get_vk_upload_url(vk_method_urls, payload)
         server, uploaded_photo, photo_hash = upload_comics_to_vkserver(
@@ -119,9 +113,9 @@ if __name__ == '__main__':
         wall_post = post_photo_to_vk_wall(vk_method_urls, payload)
         print("Комикс успешно опубликован!")
     except (requests.HTTPError, requests.ConnectionError) as e:
-        quit('Не возможно получить данные с сервера:\n{}'.format(e))
+        exit('Не возможно получить данные с сервера:\n{}'.format(e))
     except (OSError, PermissionError, FileNotFoundError) as e:
-        quit('Не возможно открыть файл:\n{}'.format(e))
+        exit('Не возможно открыть файл:\n{}'.format(e))
     try:
         delete_img_file(file_name)
     except (OSError, PermissionError, FileNotFoundError) as e:
