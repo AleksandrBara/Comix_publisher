@@ -14,18 +14,18 @@ def save_link_as_picture(link, file_name):
 
 def make_file_extension_from_link(link):
     url_component = urllib.parse.urlparse(link).path
-    url_component_clean = urllib.parse.unquote(url_component)
-    file_extension = os.path.splitext(url_component_clean)[1]
+    url_clean_component = urllib.parse.unquote(url_component)
+    file_extension = os.path.splitext(url_clean_component)[1]
     return file_extension
 
 
 def get_vk_upload_url(vk_method_urls, payload):
-    responce = requests.get(
+    response = requests.get(
         vk_method_urls['get_wall_upload'],
         params=payload
     )
-    responce.raise_for_status()
-    upload_url = responce.json()['response']['upload_url']
+    response.raise_for_status()
+    upload_url = response.json()['response']['upload_url']
     return upload_url
 
 
@@ -36,7 +36,7 @@ def upload_comics_to_vkserver(upload_url, file_name):
             upload_url,
             files=upload_photo
         )
-        send_photo_to_vk_server.raise_for_status()
+    send_photo_to_vk_server.raise_for_status()
     server = send_photo_to_vk_server.json()['server']
     uploaded_photo = send_photo_to_vk_server.json()['photo']
     photo_hash = send_photo_to_vk_server.json()['hash']
@@ -60,10 +60,10 @@ def post_photo_to_vk_wall(vk_method_urls, payload):
 
 
 def get_random_img_url_and_comment(random_comic_info_url):
-    hkcd_responce = requests.get(random_comic_info_url)
-    hkcd_responce.raise_for_status()
-    random_comic_comment = hkcd_responce.json()['alt']
-    random_comic_img = hkcd_responce.json()['img']
+    xkcd_response = requests.get(random_comic_info_url)
+    xkcd_response.raise_for_status()
+    random_comic_comment = xkcd_response.json()['alt']
+    random_comic_img = xkcd_response.json()['img']
     return random_comic_img, random_comic_comment
 
 
@@ -84,9 +84,9 @@ if __name__ == '__main__':
         'get_wall_upload': 'https://api.vk.com/method/photos.getWallUploadServer',
         'wall_post': 'https://api.vk.com/method/wall.post'
     }
-    random_comic_nomber = random.randint(0, 2500)
+    random_comic_number = random.randint(0, 2500)
     comic_general_info_url = 'https://xkcd.com/{}/info.0.json'.format(
-        random_comic_nomber
+        random_comic_number
     )
     try:
         comic_img_url, comic_comment = get_random_img_url_and_comment(
