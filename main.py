@@ -37,9 +37,10 @@ def upload_comics_to_vkserver(upload_url, file_name):
             files=upload_photo
         )
     send_photo_to_vk_server.raise_for_status()
-    server = send_photo_to_vk_server.json()['server']
-    uploaded_photo = send_photo_to_vk_server.json()['photo']
-    photo_hash = send_photo_to_vk_server.json()['hash']
+    decoded_response = send_photo_to_vk_server.json()
+    server = decoded_response['server']
+    uploaded_photo = decoded_response['photo']
+    photo_hash = decoded_response['hash']
     return server, uploaded_photo, photo_hash
 
 
@@ -48,8 +49,9 @@ def save_photo_to_vk_wall(vk_method_urls, payload):
         vk_method_urls['save_wall_photo'],
         params=payload
     )
-    media_id = save_photo_on_wall.json()['response'][0]['id']
-    owner_id = save_photo_on_wall.json()['response'][0]['owner_id']
+    decoded_response = save_photo_on_wall.json()
+    media_id = decoded_response['response'][0]['id']
+    owner_id = decoded_response['response'][0]['owner_id']
     return media_id, owner_id
 
 
@@ -62,8 +64,9 @@ def post_photo_to_vk_wall(vk_method_urls, payload):
 def get_random_img_url_and_comment(random_comic_info_url):
     xkcd_response = requests.get(random_comic_info_url)
     xkcd_response.raise_for_status()
-    random_comic_comment = xkcd_response.json()['alt']
-    random_comic_img = xkcd_response.json()['img']
+    decoded_response = xkcd_response.json()
+    random_comic_comment = decoded_response['alt']
+    random_comic_img = decoded_response['img']
     return random_comic_img, random_comic_comment
 
 
