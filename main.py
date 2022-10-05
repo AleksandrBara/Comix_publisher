@@ -5,7 +5,8 @@ import random
 import urllib.parse
 
 
-def download_random_comic(api_xkcd_url):
+def download_random_comic():
+    api_xkcd_url = 'https://xkcd.com/{}/info.0.json'
     random_comic_number = random.randint(0, 2500)
     random_comic_url = api_xkcd_url.format(random_comic_number)
     xkcd_response = requests.get(random_comic_url)
@@ -94,19 +95,13 @@ def post_photo_to_vk_wall(
     return wall_post
 
 
-def delete_img_file(file_name):
-    os.remove(file_name)
-
-
 if __name__ == '__main__':
     load_dotenv()
     api_version = 5.131
     vk_access_token = os.getenv("VK_ACCESS_TOKEN")
     vk_group_id = int(os.getenv("VK_GROUP_ID"))
-    api_xkcd_url = 'https://xkcd.com/{}/info.0.json'
-
     try:
-        file_name, comic_comment = download_random_comic(api_xkcd_url)
+        file_name, comic_comment = download_random_comic()
     except (requests.HTTPError, requests.ConnectionError) as e:
         exit('Не возможно получить данные с сервера:\n{}'.format(e))
     except (OSError, PermissionError) as e:
@@ -136,7 +131,9 @@ if __name__ == '__main__':
         exit('Не возможно получить данные с сервера:\n{}'.format(e))
     except (OSError, PermissionError, FileNotFoundError) as e:
         exit('Не возможно открыть файл:\n{}'.format(e))
-    try:
-        delete_img_file(file_name)
-    except (OSError, PermissionError, FileNotFoundError) as e:
-        print('Получили ошибку: {} '.format(e))
+    finally:
+        try:
+            os.remove(file_name)
+        except (OSError, PermissionError, FileNotFoundError) as e:
+            exit('Ошибка:\n{}'.format(e))
+
