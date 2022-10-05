@@ -29,11 +29,12 @@ def make_file_extension_from_link(link):
     return file_extension
 
 
-def get_vk_upload_url(vk_method_urls, payload):
-    response = requests.get(
-        vk_method_urls['get_wall_upload'],
-        params=payload
-    )
+def get_vk_upload_url(vk_access_token, api_version):
+    api_vk_url = 'https://api.vk.com/method/photos.getWallUploadServer'
+    response = requests.get(api_vk_url, params={
+        'access_token': vk_access_token,
+        'v': api_version
+    })
     response.raise_for_status()
     upload_url = response.json()['response']['upload_url']
     return upload_url
@@ -54,19 +55,41 @@ def upload_comics_to_vkserver(upload_url, file_name):
     return server, uploaded_photo, photo_hash
 
 
-def save_photo_to_vk_wall(vk_method_urls, payload):
-    save_photo_on_wall = requests.post(
-        vk_method_urls['save_wall_photo'],
-        params=payload
-    )
+def save_photo_to_vk_wall(
+        vk_access_token,
+        api_version,
+        uploaded_photo,
+        server,
+        photo_hash
+):
+    api_vk_url = 'https://api.vk.com/method/photos.saveWallPhoto'
+    save_photo_on_wall = requests.post(api_vk_url, params={
+        'access_token': vk_access_token,
+        'v': api_version,
+        'photo': uploaded_photo,
+        'server': server,
+        'hash': photo_hash
+    })
     decoded_response = save_photo_on_wall.json()
     media_id = decoded_response['response'][0]['id']
     owner_id = decoded_response['response'][0]['owner_id']
     return media_id, owner_id
 
 
-def post_photo_to_vk_wall(vk_method_urls, payload):
-    wall_post = requests.post(vk_method_urls['wall_post'], params=payload)
+def post_photo_to_vk_wall(
+        access_token,
+        api_version,
+        group_id,
+        message,
+        attachment):
+    api_vk_url = 'https://api.vk.com/method/wall.post'
+    wall_post = requests.post(api_vk_url, params={
+        'access_token': access_token,
+        'v': api_version,
+        'owner_id': -group_id,
+        'message': message,
+        'attachments': attachment,
+    })
     wall_post.raise_for_status()
     return wall_post
 
@@ -77,18 +100,10 @@ def delete_img_file(file_name):
 
 if __name__ == '__main__':
     load_dotenv()
+    api_version = 5.131
     vk_access_token = os.getenv("VK_ACCESS_TOKEN")
-    vk_group_id = os.getenv("VK_GROUP_ID")
+    vk_group_id = int(os.getenv("VK_GROUP_ID"))
     api_xkcd_url = 'https://xkcd.com/{}/info.0.json'
-    payload = {
-        'access_token': vk_access_token,
-        'v': '5.131'
-    }
-    vk_method_urls = {
-        'save_wall_photo': 'https://api.vk.com/method/photos.saveWallPhoto',
-        'get_wall_upload': 'https://api.vk.com/method/photos.getWallUploadServer',
-        'wall_post': 'https://api.vk.com/method/wall.post'
-    }
 
     try:
         file_name, comic_comment = download_random_comic(api_xkcd_url)
@@ -97,20 +112,25 @@ if __name__ == '__main__':
     except (OSError, PermissionError) as e:
         exit('Ошибка:\n{}'.format(e))
     try:
-        upload_url = get_vk_upload_url(vk_method_urls, payload)
+        upload_url = get_vk_upload_url(vk_access_token, api_version)
         server, uploaded_photo, photo_hash = upload_comics_to_vkserver(
             upload_url,
             file_name
         )
-        payload['hash'] = photo_hash
-        payload['photo'] = uploaded_photo
-        payload['server'] = server
-        payload['message'] = comic_comment
-        media_id, owner_id = save_photo_to_vk_wall(vk_method_urls, payload)
-        payload['media_id'] = media_id
-        payload['attachments'] = 'photo{}_{}'.format(owner_id, media_id)
-        payload['owner_id'] = '-{}'.format(vk_group_id)
-        wall_post = post_photo_to_vk_wall(vk_method_urls, payload)
+        media_id, owner_id = save_photo_to_vk_wall(
+            vk_access_token,
+            api_version,
+            uploaded_photo,
+            server,
+            photo_hash)
+        attachment = 'photo{}_{}'.format(owner_id, media_id)
+        wall_post = post_photo_to_vk_wall(
+            vk_access_token,
+            api_version,
+            vk_group_id,
+            comic_comment,
+            attachment
+        )
         print("Комикс успешно опубликован!")
     except (requests.HTTPError, requests.ConnectionError) as e:
         exit('Не возможно получить данные с сервера:\n{}'.format(e))
