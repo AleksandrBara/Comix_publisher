@@ -7,7 +7,10 @@ import urllib.parse
 
 def download_random_comic():
     api_xkcd_url = 'https://xkcd.com/{}/info.0.json'
-    random_comic_number = random.randint(0, 2500)
+    last_comic_num_response = requests.get(api_xkcd_url.format(''))
+    last_comic_num_response.raise_for_status()
+    last_comic_num = last_comic_num_response.json()['num']
+    random_comic_number = random.randint(0, last_comic_num)
     random_comic_url = api_xkcd_url.format(random_comic_number)
     xkcd_response = requests.get(random_comic_url)
     xkcd_response.raise_for_status()
