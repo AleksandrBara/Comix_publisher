@@ -74,6 +74,7 @@ def save_photo_to_vk_wall(
         'server': server,
         'hash': photo_hash
     })
+    save_photo_on_wall.raise_for_status()
     decoded_response = save_photo_on_wall.json()
     media_id = decoded_response['response'][0]['id']
     owner_id = decoded_response['response'][0]['owner_id']
@@ -106,9 +107,9 @@ if __name__ == '__main__':
     try:
         file_name, comic_comment = download_random_comic()
     except (requests.HTTPError, requests.ConnectionError) as e:
-        exit('Не возможно получить данные с сервера:\n{}'.format(e))
+        print('Не возможно получить данные с сервера:\n{}'.format(e))
     except (OSError, PermissionError) as e:
-        exit('Ошибка:\n{}'.format(e))
+        print('Ошибка:\n{}'.format(e))
     try:
         upload_url = get_vk_upload_url(vk_access_token, api_version)
         server, uploaded_photo, photo_hash = upload_comics_to_vkserver(
@@ -131,12 +132,11 @@ if __name__ == '__main__':
         )
         print("Комикс успешно опубликован!")
     except (requests.HTTPError, requests.ConnectionError) as e:
-        exit('Не возможно получить данные с сервера:\n{}'.format(e))
+        print('Не возможно получить данные с сервера:\n{}'.format(e))
     except (OSError, PermissionError, FileNotFoundError) as e:
-        exit('Не возможно открыть файл:\n{}'.format(e))
+        print('Не возможно открыть файл:\n{}'.format(e))
     finally:
         try:
             os.remove(file_name)
         except (OSError, PermissionError, FileNotFoundError) as e:
-            exit('Ошибка:\n{}'.format(e))
-
+            print('Ошибка:\n{}'.format(e))
