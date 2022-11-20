@@ -1,4 +1,5 @@
 # Публикация комиксов
+![img](https://imgs.xkcd.com/comics/angular_momentum.jpg)
 Код публикует рандомный комикс и веселый комментарий к нему из [xkcd.com](https://xkcd.com/)
 
 ### Как установить
